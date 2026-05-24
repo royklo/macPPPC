@@ -67,7 +67,7 @@ export function AppInput({
         subtitle="Upload a .zip / Info.plist or pick a known app"
       />
       <CardBody>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
         <label
           className={cn(
             'relative flex flex-col items-center justify-center p-8 rounded-md border-2 border-dashed border-border bg-background/40 cursor-pointer transition',
@@ -124,7 +124,7 @@ export function AppInput({
             />
           </button>
           {menuOpen && (
-            <div className="mt-2 rounded-md border border-border bg-card shadow-[var(--shadow-soft)] overflow-hidden">
+            <div className="mt-2 rounded-md border border-border bg-card shadow-[var(--shadow-soft)] overflow-y-auto max-h-[480px]">
               {KNOWN_APPS.map((app) => {
                 const already = alreadySelectedBundleIds.includes(app.bundleId);
                 return (
