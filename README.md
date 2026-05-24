@@ -185,15 +185,6 @@ scripts/
 
 ---
 
-## Credits
-
-Original vanilla-JS implementation by Roy Klooster. Rewritten as a React +
-Vite SPA with direct Intune deploy.
-
-Connect via [SimsenBlog.dk](https://www.simsenblog.dk) or LinkedIn.
-
----
-
 ## License
 
 Provided as-is. Test in a pilot group before broad deployment.
