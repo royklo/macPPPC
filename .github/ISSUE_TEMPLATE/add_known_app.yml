@@ -1,0 +1,99 @@
+name: Add a known app
+description: Suggest a new entry for the built-in Known Apps list
+title: "[Known App] Add <app name>"
+labels: ["known-apps"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping expand the Known Apps catalog!
+        Each entry maps an app's **CFBundleIdentifier** to its **designated code requirement** (the string `codesign` produces).
+        Once merged, the app will appear in the dropdown at https://www.simsenblog.dk/pppc-builder/ — no install needed for users.
+
+        **How to get the values:**
+        ```bash
+        # On a Mac with the app installed:
+        codesign --display -r - /Applications/<App>.app
+
+        # The line you want starts with "designated => "
+        # The bundle ID can be read from:
+        /usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" /Applications/<App>.app/Contents/Info.plist
+        ```
+
+        Or just run `./scripts/harvest-known-apps.sh` in a clone of this repo — it formats everything for you.
+
+  - type: input
+    id: display-name
+    attributes:
+      label: Display name
+      description: What the app should be called in the dropdown.
+      placeholder: "e.g. Adobe Photoshop"
+    validations:
+      required: true
+
+  - type: input
+    id: bundle-id
+    attributes:
+      label: CFBundleIdentifier
+      description: Exact bundle ID from the app's Info.plist. Case-sensitive.
+      placeholder: "e.g. com.adobe.Photoshop"
+    validations:
+      required: true
+
+  - type: textarea
+    id: code-requirement
+    attributes:
+      label: Designated code requirement
+      description: |
+        The full string after `designated =>` from `codesign --display -r -`.
+        Include the entire line verbatim — quotes, certificate clauses, Team ID, everything.
+      placeholder: |
+        identifier "com.adobe.Photoshop" and anchor apple generic and certificate 1[field.1.2.840.113635.100.6.2.6] /* exists */ and certificate leaf[field.1.2.840.113635.100.6.1.13] /* exists */ and certificate leaf[subject.OU] = JQ525L2MZD
+      render: shell
+    validations:
+      required: true
+
+  - type: dropdown
+    id: source
+    attributes:
+      label: How did you obtain the code requirement?
+      options:
+        - I ran `codesign --display -r -` on the app myself
+        - I used `./scripts/harvest-known-apps.sh` from this repo
+        - I copied it from official vendor documentation (please link in "Additional context")
+        - I copied it from a public PPPC profile (please link in "Additional context")
+        - Other (explain below)
+    validations:
+      required: true
+
+  - type: input
+    id: app-version
+    attributes:
+      label: App version tested
+      description: The version of the app you ran `codesign` against. Helps us know how fresh the entry is.
+      placeholder: "e.g. 25.7.0 (build 2024-05-15)"
+
+  - type: input
+    id: macos-version
+    attributes:
+      label: macOS version used to capture
+      placeholder: "e.g. macOS 14.5"
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context (optional)
+      description: |
+        - Link to vendor docs if applicable.
+        - Note if the app has helper bundles that also need PPPC entries (some apps' Screen Recording / AppleEvents are handled by a helper, not the main bundle).
+        - Note if the app has multiple builds (e.g. stable / beta channels) with different bundle IDs.
+
+  - type: checkboxes
+    id: confirmations
+    attributes:
+      label: Confirmations
+      options:
+        - label: The code requirement was captured from a freshly-installed signed copy of the app (not pulled from a years-old gist)
+          required: true
+        - label: This app is reasonably commonly deployed in macOS / Intune environments (not a personal one-off)
+          required: false
