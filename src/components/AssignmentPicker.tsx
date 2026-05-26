@@ -238,18 +238,22 @@ function GroupsPicker({
               className="rounded-md bg-card-elevated/40 border border-border/60 overflow-hidden"
             >
               <div className="flex items-center gap-2 px-2.5 py-1.5">
-                <span
+                <button
+                  type="button"
                   className={cn(
-                    'text-[10px] font-medium uppercase tracking-wide px-1.5 py-0.5 rounded-sm cursor-pointer',
+                    'text-[10px] font-medium uppercase tracking-wide px-1.5 py-0.5 rounded-sm',
+                    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
                     g.intent === 'include'
                       ? 'bg-primary/15 text-primary'
                       : 'bg-destructive/15 text-destructive',
                   )}
                   onClick={() => toggleIntent(g.id)}
-                  title="Click to toggle include/exclude"
+                  aria-pressed={g.intent === 'exclude'}
+                  aria-label={`Toggle group intent (currently ${g.intent})`}
+                  title="Toggle include/exclude"
                 >
                   {g.intent}
-                </span>
+                </button>
                 <span className="flex-1 text-sm truncate">{g.displayName}</span>
                 <button
                   type="button"

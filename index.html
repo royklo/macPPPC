@@ -1,10 +1,31 @@
 <!doctype html>
-<html lang="en" class="dark">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Intune PPPC Builder</title>
     <meta name="description" content="Client-side, Jamf-free web app for generating macOS PPPC configuration profiles for Microsoft Intune" />
+    <script>
+      // Apply the resolved theme before first paint to avoid FOUC.
+      // Mirrors src/lib/theme.ts (kept inline so it runs synchronously).
+      (function () {
+        try {
+          var pref = localStorage.getItem('pppc.theme');
+          if (pref !== 'light' && pref !== 'dark' && pref !== 'auto') pref = 'auto';
+          var resolved = pref === 'auto'
+            ? (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+            : pref;
+          if (resolved === 'dark') document.documentElement.classList.add('dark');
+        } catch (e) {
+          // localStorage may be unavailable; fall through to OS preference.
+          try {
+            if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+              document.documentElement.classList.add('dark');
+            }
+          } catch (e2) {}
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

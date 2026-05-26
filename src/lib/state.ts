@@ -40,9 +40,12 @@ export function makeAppEntry(
   };
 }
 
-/** Sanitize a string into something safe for use as a filename. */
+/** Sanitize a string into something safe for use as a filename.
+ *  Falls back to 'profile' when the input contains only disallowed characters
+ *  (e.g. non-Latin script), so generated filenames never collapse to '.mobileconfig'. */
 export function safeFilename(s: string): string {
-  return s.replace(/[^A-Za-z0-9._-]+/g, '-').replace(/^-+|-+$/g, '');
+  const cleaned = s.replace(/[^A-Za-z0-9._-]+/g, '-').replace(/^-+|-+$/g, '');
+  return cleaned || 'profile';
 }
 
 export function totalEnabledPermissions(apps: SelectedApp[]): number {

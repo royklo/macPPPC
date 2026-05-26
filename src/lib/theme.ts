@@ -17,14 +17,22 @@ function osPrefersDark(): boolean {
 
 export function getThemePref(): ThemePref {
   if (typeof window === 'undefined') return 'auto';
-  const v = localStorage.getItem(STORAGE_KEY);
-  if (v === 'light' || v === 'dark' || v === 'auto') return v;
+  try {
+    const v = localStorage.getItem(STORAGE_KEY);
+    if (v === 'light' || v === 'dark' || v === 'auto') return v;
+  } catch {
+    // localStorage may throw in private/blocked contexts — fall through to default.
+  }
   return 'auto';
 }
 
 export function setThemePref(pref: ThemePref) {
-  if (pref === 'auto') localStorage.removeItem(STORAGE_KEY);
-  else localStorage.setItem(STORAGE_KEY, pref);
+  try {
+    if (pref === 'auto') localStorage.removeItem(STORAGE_KEY);
+    else localStorage.setItem(STORAGE_KEY, pref);
+  } catch {
+    // Ignore — applyTheme still runs so the in-session theme switches.
+  }
   applyTheme(pref);
 }
 

@@ -34,6 +34,23 @@ const TENANT_ID_KEY = 'pppc.intuneTenantId';
 const BUILTIN_CLIENT_ID = (import.meta.env.VITE_AZURE_CLIENT_ID ?? '').trim();
 const BUILTIN_TENANT_ID = (import.meta.env.VITE_AZURE_TENANT_ID ?? 'organizations').trim();
 
+/** Safe localStorage helpers — return null/false if storage is unavailable. */
+function lsGet(key: string): string | null {
+  try {
+    return localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+function lsRemove(key: string): void {
+  try {
+    localStorage.removeItem(key);
+  } catch {
+    // ignore — storage blocked or unavailable
+  }
+}
+
 /**
  * Resolve the active Client ID.
  *  1. VITE_AZURE_CLIENT_ID env var — always wins when set.
@@ -45,22 +62,19 @@ const BUILTIN_TENANT_ID = (import.meta.env.VITE_AZURE_TENANT_ID ?? 'organization
  */
 export function getStoredClientId(): string {
   if (BUILTIN_CLIENT_ID) {
-    if (
-      localStorage.getItem(CLIENT_ID_KEY) ||
-      localStorage.getItem(TENANT_ID_KEY)
-    ) {
-      localStorage.removeItem(CLIENT_ID_KEY);
-      localStorage.removeItem(TENANT_ID_KEY);
+    if (lsGet(CLIENT_ID_KEY) || lsGet(TENANT_ID_KEY)) {
+      lsRemove(CLIENT_ID_KEY);
+      lsRemove(TENANT_ID_KEY);
     }
     return BUILTIN_CLIENT_ID;
   }
-  const override = localStorage.getItem(CLIENT_ID_KEY);
+  const override = lsGet(CLIENT_ID_KEY);
   return (override && override.trim()) || '';
 }
 
 export function getStoredTenantId(): string {
   if (BUILTIN_CLIENT_ID) return BUILTIN_TENANT_ID || 'organizations';
-  const override = localStorage.getItem(TENANT_ID_KEY);
+  const override = lsGet(TENANT_ID_KEY);
   return (override && override.trim()) || BUILTIN_TENANT_ID || 'organizations';
 }
 

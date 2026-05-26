@@ -14,6 +14,15 @@ import vm from 'node:vm';
 import { generateMobileconfig } from '../src/lib/mobileconfig';
 import type { SelectedApp, ProfileSettings } from '../src/lib/types';
 
+// The v2 generator only reads a subset of SelectedApp / ProfileSettings.
+// Narrow the fixture types so they don't need to carry Intune-specific fields
+// (profile/scopeTagIds/deploymentChannel) that the v2 reference doesn't use.
+type FixtureApp = Pick<SelectedApp, 'id' | 'app' | 'permissions' | 'expanded' | 'isKnownApp'>;
+type FixtureSettings = Pick<
+  ProfileSettings,
+  'organization' | 'payloadName' | 'payloadIdentifier' | 'payloadDescription'
+>;
+
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const repoRoot = join(__dirname, '..');
 
@@ -79,7 +88,7 @@ vm.runInContext(legacySource, sandbox);
 const innerUUID = '11111111-2222-4333-8444-555555555555';
 const profileUUID = 'AAAAAAAA-BBBB-4CCC-8DDD-EEEEEEEEEEEE';
 
-const teamsApp: SelectedApp = {
+const teamsApp: FixtureApp = {
   id: 1,
   app: {
     bundleId: 'com.microsoft.teams',
@@ -98,7 +107,7 @@ const teamsApp: SelectedApp = {
   isKnownApp: true,
 };
 
-const zoomApp: SelectedApp = {
+const zoomApp: FixtureApp = {
   id: 2,
   app: {
     bundleId: 'us.zoom.xos',
@@ -115,7 +124,7 @@ const zoomApp: SelectedApp = {
   isKnownApp: true,
 };
 
-const customApp: SelectedApp = {
+const customApp: FixtureApp = {
   id: 3,
   app: {
     bundleId: 'com.example.weird & app',
@@ -129,7 +138,7 @@ const customApp: SelectedApp = {
   isKnownApp: false,
 };
 
-const baseSettings: ProfileSettings = {
+const baseSettings: FixtureSettings = {
   organization: 'Contoso IT',
   payloadName: 'PPPC - Microsoft Teams',
   payloadIdentifier: profileUUID,
@@ -138,8 +147,8 @@ const baseSettings: ProfileSettings = {
 
 type Case = {
   name: string;
-  apps: SelectedApp[];
-  settings: ProfileSettings;
+  apps: FixtureApp[];
+  settings: FixtureSettings;
 };
 
 const cases: Case[] = [
@@ -173,7 +182,7 @@ const cases: Case[] = [
   },
 ];
 
-function runV2(apps: SelectedApp[], settings: ProfileSettings): string {
+function runV2(apps: FixtureApp[], settings: FixtureSettings): string {
   sandbox.selectedApps = apps;
   sandbox.profileOrganization = settings.organization;
   sandbox.profilePayloadName = settings.payloadName;
@@ -186,7 +195,14 @@ function runV2(apps: SelectedApp[], settings: ProfileSettings): string {
 let failed = 0;
 for (const c of cases) {
   const v2Out = runV2(c.apps, c.settings);
-  const v3Out = generateMobileconfig(c.apps, c.settings, innerUUID);
+  // generateMobileconfig is typed against the full SelectedApp/ProfileSettings
+  // (including Intune fields), but only reads the subset captured by Fixture*.
+  // Cast at the boundary to keep the script type-correct.
+  const v3Out = generateMobileconfig(
+    c.apps as SelectedApp[],
+    c.settings as ProfileSettings,
+    innerUUID,
+  );
   if (v2Out === v3Out) {
     console.log(`OK   ${c.name} (${v2Out.length} bytes)`);
     continue;
