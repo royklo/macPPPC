@@ -1,30 +1,61 @@
 import { generateMobileconfig } from './mobileconfig';
+import {
+  buildSettingsCatalogPolicy,
+  serializeSettingsCatalogPolicy,
+} from './settingsCatalog';
 import { generateRandomUUID } from './uuid';
 import { safeFilename, totalEnabledPermissions } from './state';
 import type {
+  DeploymentFormat,
   GeneratedProfile,
   OutputMode,
   ProfileSettings,
   SelectedApp,
 } from './types';
 
+function buildContent(
+  apps: SelectedApp[],
+  settings: ProfileSettings,
+  format: DeploymentFormat,
+  innerUUID?: string,
+): { content: string; ext: 'mobileconfig' | 'json' } {
+  if (format === 'classic') {
+    return {
+      content: generateMobileconfig(apps, settings, innerUUID),
+      ext: 'mobileconfig',
+    };
+  }
+  const policy = buildSettingsCatalogPolicy(apps, settings);
+  // settingsCatalog produces null when no permissions enabled — the outer guard
+  // in generateProfiles already returns [] in that case, so we won't reach here.
+  return {
+    content: policy ? serializeSettingsCatalogPolicy(policy) : '',
+    ext: 'json',
+  };
+}
+
 /**
- * Generate one or more .mobileconfig profiles depending on output mode.
+ * Generate one or more deployment profiles depending on output mode and format.
  *
- * - 'bundle' : single profile containing all enabled apps (default v2 behavior)
- * - 'separate': one profile per app — each uses the app's per-app profile metadata
- *               with org/description falling back to the shared ProfileSettings
+ * Output mode controls how many profiles are produced:
+ *   - 'bundle'   : single profile containing all enabled apps
+ *   - 'separate' : one profile per app, using each app's per-app metadata
+ *
+ * Deployment format controls the serialization shape:
+ *   - 'classic'         : `.mobileconfig` plist for macOSCustomConfiguration
+ *   - 'settingsCatalog' : JSON for the configurationPolicies Settings Catalog API
  */
 export function generateProfiles(
   apps: SelectedApp[],
   shared: ProfileSettings,
   mode: OutputMode,
+  format: DeploymentFormat,
   innerUUID?: string,
 ): GeneratedProfile[] {
   if (totalEnabledPermissions(apps) === 0) return [];
 
   if (mode === 'bundle') {
-    const xml = generateMobileconfig(apps, shared, innerUUID);
+    const { content, ext } = buildContent(apps, shared, format, innerUUID);
     const appSegment = apps
       .map((a) => a.app.bundleId.split('.').pop())
       .filter(Boolean)
@@ -32,10 +63,11 @@ export function generateProfiles(
     const baseName = shared.payloadName || `PPPC-${appSegment || 'profile'}`;
     return [
       {
-        filename: `${safeFilename(baseName)}.mobileconfig`,
+        filename: `${safeFilename(baseName)}.${ext}`,
         policyName: shared.payloadName || `PPPC Configuration`,
         description: shared.payloadDescription,
-        xml,
+        content,
+        format,
         scopeTagIds: shared.scopeTagIds.length > 0 ? shared.scopeTagIds : ['0'],
         deploymentChannel: shared.deploymentChannel,
       },
@@ -54,12 +86,18 @@ export function generateProfiles(
       scopeTagIds: app.scopeTagIds,
       deploymentChannel: app.deploymentChannel,
     };
-    const xml = generateMobileconfig([app], perAppSettings, generateRandomUUID());
+    const { content, ext } = buildContent(
+      [app],
+      perAppSettings,
+      format,
+      generateRandomUUID(),
+    );
     out.push({
-      filename: `${safeFilename(perAppSettings.payloadName)}.mobileconfig`,
+      filename: `${safeFilename(perAppSettings.payloadName)}.${ext}`,
       policyName: perAppSettings.payloadName,
       description: perAppSettings.payloadDescription,
-      xml,
+      content,
+      format,
       bundleId: app.app.bundleId,
       scopeTagIds: app.scopeTagIds.length > 0 ? app.scopeTagIds : ['0'],
       deploymentChannel: app.deploymentChannel,
