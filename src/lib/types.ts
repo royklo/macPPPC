@@ -101,11 +101,23 @@ export interface ProfileSettings {
 
 export type OutputMode = 'bundle' | 'separate';
 
+/**
+ * How a generated profile is uploaded to Intune.
+ *
+ * - 'classic'          — `.mobileconfig` plist deployed as `macOSCustomConfiguration`
+ *                        (existing behaviour). Output is XML.
+ * - 'settingsCatalog'  — Microsoft Intune Settings Catalog policy deployed via
+ *                        `configurationPolicies`. Output is JSON.
+ */
+export type DeploymentFormat = 'classic' | 'settingsCatalog';
+
 export interface GeneratedProfile {
   filename: string;
   policyName: string;
   description: string;
-  xml: string;
+  /** Serialized policy body. XML for `classic`, JSON for `settingsCatalog`. */
+  content: string;
+  format: DeploymentFormat;
   /** When mode === 'separate', the bundleId of the single app this profile is for. */
   bundleId?: string;
   /** Intune scope tag IDs to set on the policy when deployed. */

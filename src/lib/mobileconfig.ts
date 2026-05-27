@@ -62,8 +62,10 @@ function buildServicesDict(selectedApps: SelectedApp[]): string | null {
       const service = perm.tccService;
 
       if (perm.tccService === 'AppleEvents') {
-        const receivers = state.receivers ?? [];
-        if (receivers.length === 0) continue; // skip — AppleEvents without a receiver is invalid
+        // Skip receivers with empty identifier — Apple Events without a target
+        // app is structurally invalid (and macOS / Graph would reject it).
+        const receivers = (state.receivers ?? []).filter((r) => r.identifier.trim() !== '');
+        if (receivers.length === 0) continue;
         if (!serviceGroups[service]) serviceGroups[service] = [];
         serviceGroups[service].push({
           kind: 'appleEvents',
@@ -145,50 +147,24 @@ ${appsXml}
     .join('\n');
 }
 
-function emptyProfile(name: string, org: string, desc: string, uuid: string): string {
-  return `<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-    <key>PayloadContent</key>
-    <array/>
-    <key>PayloadDescription</key>
-    <string>${escapeXml(desc)}</string>
-    <key>PayloadDisplayName</key>
-    <string>${escapeXml(name)}</string>
-    <key>PayloadIdentifier</key>
-    <string>${uuid}</string>
-    <key>PayloadOrganization</key>
-    <string>${escapeXml(org)}</string>
-    <key>PayloadScope</key>
-    <string>System</string>
-    <key>PayloadType</key>
-    <string>Configuration</string>
-    <key>PayloadUUID</key>
-    <string>${uuid}</string>
-    <key>PayloadVersion</key>
-    <integer>1</integer>
-</dict>
-</plist>`;
-}
-
 /**
- * Generate a complete .mobileconfig XML string.
+ * Generate a complete .mobileconfig XML string, or null if no services would
+ * be emitted. Returning null lets the caller skip the profile entirely instead
+ * of generating an empty-but-deployable plist (which is misleading and, for
+ * AppleEvents-with-no-receivers, surprising).
  */
 export function generateMobileconfig(
   selectedApps: SelectedApp[],
   settings: ProfileSettings,
   innerPayloadUUID?: string,
-): string {
+): string | null {
   const profileName = settings.payloadName || 'PPPC Configuration';
   const organization = settings.organization || 'IT Department';
   const description = settings.payloadDescription || '';
   const profileUUID = settings.payloadIdentifier || generateRandomUUID();
 
   const servicesContent = buildServicesDict(selectedApps);
-  if (!servicesContent) {
-    return emptyProfile(profileName, organization, description, profileUUID);
-  }
+  if (!servicesContent) return null;
 
   const inner = innerPayloadUUID ?? generateRandomUUID();
   return `<?xml version="1.0" encoding="UTF-8"?>
@@ -203,13 +179,13 @@ export function generateMobileconfig(
             <key>PayloadDisplayName</key>
             <string>${escapeXml(profileName)}</string>
             <key>PayloadIdentifier</key>
-            <string>${inner}</string>
+            <string>${escapeXml(inner)}</string>
             <key>PayloadOrganization</key>
             <string>${escapeXml(organization)}</string>
             <key>PayloadType</key>
             <string>com.apple.TCC.configuration-profile-policy</string>
             <key>PayloadUUID</key>
-            <string>${inner}</string>
+            <string>${escapeXml(inner)}</string>
             <key>PayloadVersion</key>
             <integer>1</integer>
             <key>Services</key>
@@ -223,7 +199,7 @@ ${servicesContent}
     <key>PayloadDisplayName</key>
     <string>${escapeXml(profileName)}</string>
     <key>PayloadIdentifier</key>
-    <string>${profileUUID}</string>
+    <string>${escapeXml(profileUUID)}</string>
     <key>PayloadOrganization</key>
     <string>${escapeXml(organization)}</string>
     <key>PayloadScope</key>
@@ -231,7 +207,7 @@ ${servicesContent}
     <key>PayloadType</key>
     <string>Configuration</string>
     <key>PayloadUUID</key>
-    <string>${profileUUID}</string>
+    <string>${escapeXml(profileUUID)}</string>
     <key>PayloadVersion</key>
     <integer>1</integer>
 </dict>

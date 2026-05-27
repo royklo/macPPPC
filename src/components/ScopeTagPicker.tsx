@@ -12,6 +12,11 @@ interface Props {
 let cached: ScopeTag[] | null = null;
 let cachePromise: Promise<ScopeTag[]> | null = null;
 
+function clearScopeTagCache(): void {
+  cached = null;
+  cachePromise = null;
+}
+
 async function getScopeTags(): Promise<ScopeTag[]> {
   if (cached) return cached;
   if (cachePromise) return cachePromise;
@@ -34,7 +39,13 @@ export function ScopeTagPicker({ value, onChange, signedIn }: Props) {
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
-    if (!signedIn) return;
+    if (!signedIn) {
+      // Drop the cached tag list when we lose the session — the next sign-in
+      // may be a different tenant, and tags are tenant-scoped.
+      clearScopeTagCache();
+      setTags([]);
+      return;
+    }
     setLoading(true);
     setError(null);
     getScopeTags()

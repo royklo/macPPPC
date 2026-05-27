@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { CheckCircle2, AlertCircle, X } from 'lucide-react';
 
 export type ToastKind = 'ok' | 'err';
@@ -13,6 +13,14 @@ interface Props {
 export function Toast({ toast, onDismiss }: Props) {
   const [visible, setVisible] = useState(false);
 
+  // Keep the latest onDismiss in a ref so the auto-dismiss effect doesn't
+  // re-subscribe (and reset its timer) on every parent render — the parent
+  // re-creates the inline `() => setToast(null)` closure every time.
+  const onDismissRef = useRef(onDismiss);
+  useEffect(() => {
+    onDismissRef.current = onDismiss;
+  }, [onDismiss]);
+
   useEffect(() => {
     if (!toast) {
       setVisible(false);
@@ -23,14 +31,14 @@ export function Toast({ toast, onDismiss }: Props) {
       let dismissTimer: ReturnType<typeof setTimeout> | undefined;
       const hideTimer = setTimeout(() => {
         setVisible(false);
-        dismissTimer = setTimeout(onDismiss, 200);
+        dismissTimer = setTimeout(() => onDismissRef.current(), 200);
       }, 3500);
       return () => {
         clearTimeout(hideTimer);
         if (dismissTimer) clearTimeout(dismissTimer);
       };
     }
-  }, [toast, onDismiss]);
+  }, [toast]);
 
   if (!toast) return null;
 

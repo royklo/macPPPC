@@ -32,17 +32,19 @@ export function Preview({ profiles, selectedApps, mode, onDeploy, deployEnabled 
   const [wrap, setWrap] = useState(false);
 
   const hasProfiles = profiles.length > 0;
-  const totalBytes = profiles.reduce((s, p) => s + p.xml.length, 0);
+  const totalBytes = profiles.reduce((s, p) => s + p.content.length, 0);
+  const format = profiles[0]?.format ?? 'classic';
+  const isJson = format === 'settingsCatalog';
 
   function showCopied(key: string) {
     setCopied(key);
     setTimeout(() => setCopied(null), 2000);
   }
 
-  function copyXml(p: GeneratedProfile, key: string) {
+  function copyContent(p: GeneratedProfile, key: string) {
     const fallback = () => {
       const ta = document.createElement('textarea');
-      ta.value = p.xml;
+      ta.value = p.content;
       ta.style.position = 'fixed';
       ta.style.opacity = '0';
       document.body.appendChild(ta);
@@ -57,7 +59,7 @@ export function Preview({ profiles, selectedApps, mode, onDeploy, deployEnabled 
     };
     if (navigator.clipboard?.writeText) {
       navigator.clipboard
-        .writeText(p.xml)
+        .writeText(p.content)
         .then(() => showCopied(key))
         .catch(fallback);
     } else {
@@ -67,18 +69,17 @@ export function Preview({ profiles, selectedApps, mode, onDeploy, deployEnabled 
 
   async function download() {
     if (!hasProfiles) return;
+    const mime = isJson ? 'application/json' : 'application/x-apple-aspen-config';
     if (mode === 'bundle' || profiles.length === 1) {
       const p = profiles[0];
-      triggerDownload(
-        new Blob([p.xml], { type: 'application/x-apple-aspen-config' }),
-        p.filename,
-      );
+      triggerDownload(new Blob([p.content], { type: mime }), p.filename);
       return;
     }
     const zip = new JSZip();
-    for (const p of profiles) zip.file(p.filename, p.xml);
+    for (const p of profiles) zip.file(p.filename, p.content);
     const blob = await zip.generateAsync({ type: 'blob' });
-    triggerDownload(blob, 'pppc-profiles.zip');
+    const zipName = isJson ? 'pppc-policies.zip' : 'pppc-profiles.zip';
+    triggerDownload(blob, zipName);
   }
 
   function triggerDownload(blob: Blob, filename: string) {
@@ -113,12 +114,14 @@ export function Preview({ profiles, selectedApps, mode, onDeploy, deployEnabled 
     );
   }
 
+  const fallbackFilename = isJson ? 'policy.json' : 'profile.mobileconfig';
   const headerFilename = hasProfiles
     ? mode === 'separate' && profiles.length > 1
-      ? `${profiles.length} profiles`
-      : profiles[0]?.filename ?? 'profile.mobileconfig'
-    : 'profile.mobileconfig';
+      ? `${profiles.length} ${isJson ? 'policies' : 'profiles'}`
+      : profiles[0]?.filename ?? fallbackFilename
+    : fallbackFilename;
 
+  const copyLabel = isJson ? 'Copy JSON' : 'Copy XML';
   const downloadLabel =
     mode === 'separate' && profiles.length > 1
       ? `Download .zip (${profiles.length})`
@@ -175,7 +178,9 @@ export function Preview({ profiles, selectedApps, mode, onDeploy, deployEnabled 
       <div className="flex-1 overflow-auto">
         {!hasProfiles && (
           <pre className="text-[11px] font-mono leading-relaxed p-4 whitespace-pre text-muted-foreground">
-            {`<!-- Select an app and enable permissions to preview -->`}
+            {isJson
+              ? '// Select an app and enable permissions to preview'
+              : '<!-- Select an app and enable permissions to preview -->'}
           </pre>
         )}
 
@@ -204,7 +209,7 @@ export function Preview({ profiles, selectedApps, mode, onDeploy, deployEnabled 
                         {p.filename}
                       </div>
                       <div className="text-[11px] text-muted-foreground truncate">
-                        {p.policyName} · {p.xml.length.toLocaleString()} bytes
+                        {p.policyName} · {p.content.length.toLocaleString()} bytes
                       </div>
                     </div>
                   </button>
@@ -228,7 +233,7 @@ export function Preview({ profiles, selectedApps, mode, onDeploy, deployEnabled 
                       <div className="flex items-center justify-end px-2 py-1.5 border-b border-border/60">
                         <button
                           type="button"
-                          onClick={() => copyXml(p, key)}
+                          onClick={() => copyContent(p, key)}
                           className="inline-flex items-center gap-1.5 text-[11px] px-2 py-1 rounded text-muted-foreground hover:text-foreground hover:bg-card-elevated/60 transition"
                         >
                           {copied === key ? (
@@ -239,13 +244,24 @@ export function Preview({ profiles, selectedApps, mode, onDeploy, deployEnabled 
                           ) : (
                             <>
                               <Copy className="w-3 h-3" />
-                              Copy XML
+                              {copyLabel}
                             </>
                           )}
                         </button>
                       </div>
                       <div className="max-h-[60vh] overflow-auto">
-                        <XmlHighlight xml={p.xml} wrap={wrap} />
+                        {p.format === 'classic' ? (
+                          <XmlHighlight xml={p.content} wrap={wrap} />
+                        ) : (
+                          <pre
+                            className={cn(
+                              'text-[11px] font-mono leading-relaxed p-4',
+                              wrap ? 'whitespace-pre-wrap break-all' : 'whitespace-pre',
+                            )}
+                          >
+                            {p.content}
+                          </pre>
+                        )}
                       </div>
                     </div>
                   )}
@@ -261,7 +277,7 @@ export function Preview({ profiles, selectedApps, mode, onDeploy, deployEnabled 
         {mode === 'bundle' && (
           <button
             type="button"
-            onClick={() => hasProfiles && copyXml(profiles[0], 'bundle')}
+            onClick={() => hasProfiles && copyContent(profiles[0], 'bundle')}
             disabled={!hasProfiles}
             className={cn(
               'inline-flex items-center justify-center gap-2 px-3 py-2 text-sm rounded-md border border-border/60 transition',
@@ -283,7 +299,7 @@ export function Preview({ profiles, selectedApps, mode, onDeploy, deployEnabled 
         )}
         {mode === 'separate' && (
           <div className="text-[11px] text-muted-foreground self-center px-2">
-            Use Copy XML inside each profile, or Download for all.
+            Use {copyLabel} inside each profile, or Download for all.
           </div>
         )}
         <button
@@ -319,4 +335,3 @@ export function Preview({ profiles, selectedApps, mode, onDeploy, deployEnabled 
     </div>
   );
 }
-

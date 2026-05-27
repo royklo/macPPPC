@@ -6,6 +6,7 @@ import { AppCard } from './components/AppCard';
 import { Card, CardHeader, CardBody } from './components/Card';
 import { ProfileSettings } from './components/ProfileSettings';
 import { OutputModeToggle } from './components/OutputModeToggle';
+import { FormatToggle } from './components/FormatToggle';
 import { Preview } from './components/Preview';
 import { DeploymentPanel } from './components/DeploymentPanel';
 import { PolicyList } from './components/PolicyList';
@@ -18,6 +19,7 @@ import { loadKnownApps } from './lib/knownApps';
 import { makeAppEntry, totalEnabledPermissions } from './lib/state';
 import type {
   AppInfo,
+  DeploymentFormat,
   KnownApp,
   OutputMode,
   PermissionState,
@@ -31,6 +33,7 @@ export default function App() {
   const [nextId, setNextId] = useState(1);
   const [error, setError] = useState<string | null>(null);
   const [outputMode, setOutputMode] = useState<OutputMode>('bundle');
+  const [format, setFormat] = useState<DeploymentFormat>('classic');
   const [knownApps, setKnownApps] = useState<KnownApp[]>([]);
   const { state: auth, signIn, signOut } = useAuth();
 
@@ -101,8 +104,8 @@ export default function App() {
   }
 
   const profiles = useMemo(
-    () => generateProfiles(selectedApps, settings, outputMode, innerUUID),
-    [selectedApps, settings, outputMode, innerUUID],
+    () => generateProfiles(selectedApps, settings, outputMode, format, innerUUID),
+    [selectedApps, settings, outputMode, format, innerUUID],
   );
 
   const enabledCount = totalEnabledPermissions(selectedApps);
@@ -167,12 +170,14 @@ export default function App() {
                         onChange={setOutputMode}
                         appCount={selectedApps.length}
                       />
+                      <FormatToggle value={format} onChange={setFormat} />
                       <CardBody className="space-y-3">
                         {selectedApps.map((item) => (
                           <AppCard
                             key={item.id}
                             item={item}
                             mode={outputMode}
+                            knownApps={knownApps}
                             onToggleExpanded={() =>
                               updateApp(item.id, (a) => ({
                                 ...a,
@@ -221,6 +226,7 @@ export default function App() {
 
                   <PolicyList
                     mode={outputMode}
+                    format={format}
                     apps={selectedApps}
                     shared={settings}
                     signedIn={!!auth.account}
