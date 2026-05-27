@@ -4,6 +4,7 @@ import type {
   Authorization,
   AuthMode,
   AppleEventReceiver,
+  KnownApp,
   PermissionState,
   PppcPermission,
 } from '@/lib/types';
@@ -13,6 +14,8 @@ import { AppleEventReceiverEditor } from './AppleEventReceiverEditor';
 interface Props {
   perm: PppcPermission;
   state: PermissionState;
+  /** Forwarded to AppleEventReceiverEditor for the bundle-ID picker. */
+  knownApps: KnownApp[];
   onChange: (next: PermissionState) => void;
 }
 
@@ -42,7 +45,7 @@ function clampForMode(mode: AuthMode, requested: Authorization): Authorization {
   return allowed[0];
 }
 
-export function PermissionRow({ perm, state, onChange }: Props) {
+export function PermissionRow({ perm, state, knownApps, onChange }: Props) {
   const [showTip, setShowTip] = useState(false);
   const isAppleEvents = perm.tccService === 'AppleEvents';
 
@@ -142,6 +145,7 @@ export function PermissionRow({ perm, state, onChange }: Props) {
       {state.enabled && isAppleEvents && (
         <AppleEventReceiverEditor
           receivers={state.receivers ?? []}
+          knownApps={knownApps}
           onChange={setReceivers}
         />
       )}

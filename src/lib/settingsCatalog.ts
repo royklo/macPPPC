@@ -257,7 +257,9 @@ export function buildSettingsCatalogPolicy(
       const codeReq = item.app.codeRequirement || defaultCodeRequirement(item.app.bundleId);
 
       if (perm.tccService === 'AppleEvents') {
-        const receivers = state.receivers ?? [];
+        // Skip receivers with empty identifier — Graph rejects empty required
+        // strings, and an AppleEvents entry without a target app is meaningless.
+        const receivers = (state.receivers ?? []).filter((r) => r.identifier.trim() !== '');
         if (receivers.length === 0) continue;
         const list = rowsByService.get(perm.tccService) ?? [];
         for (const r of receivers) {

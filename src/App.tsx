@@ -177,6 +177,7 @@ export default function App() {
                             key={item.id}
                             item={item}
                             mode={outputMode}
+                            knownApps={knownApps}
                             onToggleExpanded={() =>
                               updateApp(item.id, (a) => ({
                                 ...a,
@@ -225,6 +226,7 @@ export default function App() {
 
                   <PolicyList
                     mode={outputMode}
+                    format={format}
                     apps={selectedApps}
                     shared={settings}
                     signedIn={!!auth.account}

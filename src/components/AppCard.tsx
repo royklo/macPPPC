@@ -1,13 +1,15 @@
 import { ChevronDown, ChevronRight, Trash2, ShieldCheck, AppWindow, RefreshCw } from 'lucide-react';
 import { PPPC_PERMISSIONS, PERMISSION_CATEGORIES } from '@/lib/permissions';
 import { generateRandomUUID } from '@/lib/uuid';
-import type { OutputMode, PermissionState, SelectedApp } from '@/lib/types';
+import type { KnownApp, OutputMode, PermissionState, SelectedApp } from '@/lib/types';
 import { PermissionRow } from './PermissionRow';
 import { cn } from '@/lib/cn';
 
 interface Props {
   item: SelectedApp;
   mode: OutputMode;
+  /** Forwarded to PermissionRow → AppleEventReceiverEditor for the picker. */
+  knownApps: KnownApp[];
   onToggleExpanded: () => void;
   onRemove: () => void;
   onChangePermission: (permId: string, next: PermissionState) => void;
@@ -18,6 +20,7 @@ interface Props {
 export function AppCard({
   item,
   mode,
+  knownApps,
   onToggleExpanded,
   onRemove,
   onChangePermission,
@@ -200,6 +203,7 @@ export function AppCard({
                         authorization: 'Allow',
                       }
                     }
+                    knownApps={knownApps}
                     onChange={(next) => onChangePermission(perm.id, next)}
                   />
                 ))}

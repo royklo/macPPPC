@@ -5,6 +5,7 @@ import { ScopeTagPicker } from './ScopeTagPicker';
 import { ChannelPicker } from './ChannelPicker';
 import type {
   DeploymentChannel,
+  DeploymentFormat,
   OutputMode,
   ProfileSettings,
   SelectedApp,
@@ -13,6 +14,7 @@ import { safeFilename } from '@/lib/state';
 
 interface Props {
   mode: OutputMode;
+  format: DeploymentFormat;
   apps: SelectedApp[];
   shared: ProfileSettings;
   signedIn: boolean;
@@ -28,12 +30,15 @@ const inputCls =
  */
 export function PolicyList({
   mode,
+  format,
   apps,
   shared,
   signedIn,
   onChangeApp,
   onChangeShared,
 }: Props) {
+  const ext = format === 'settingsCatalog' ? 'json' : 'mobileconfig';
+
   if (mode === 'bundle') {
     return (
       <Card>
@@ -89,7 +94,7 @@ export function PolicyList({
                   {a.app.bundleId}
                 </div>
                 <div className="text-[10px] text-muted-foreground">
-                  → {safeFilename(a.profile.name || `PPPC - ${a.app.displayName}`)}.mobileconfig
+                  → {safeFilename(a.profile.name || `PPPC - ${a.app.displayName}`)}.{ext}
                 </div>
               </div>
               <Row

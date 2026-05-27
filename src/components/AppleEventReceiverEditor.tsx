@@ -5,10 +5,12 @@ import type {
   Authorization,
   KnownApp,
 } from '@/lib/types';
-import { getKnownAppsSync } from '@/lib/knownApps';
 
 interface Props {
   receivers: AppleEventReceiver[];
+  /** Known-apps list for the bundle-ID picker; lifted from App.tsx so that
+   *  the editor re-renders when the async load completes. */
+  knownApps: KnownApp[];
   onChange: (next: AppleEventReceiver[]) => void;
 }
 
@@ -30,8 +32,7 @@ function lookupKnownCodeRequirement(
   return match?.codeRequirement ?? null;
 }
 
-export function AppleEventReceiverEditor({ receivers, onChange }: Props) {
-  const knownApps = getKnownAppsSync();
+export function AppleEventReceiverEditor({ receivers, knownApps, onChange }: Props) {
   const [pickerOpenFor, setPickerOpenFor] = useState<number | null>(null);
 
   function update(idx: number, patch: Partial<AppleEventReceiver>) {

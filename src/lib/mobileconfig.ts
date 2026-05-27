@@ -62,8 +62,10 @@ function buildServicesDict(selectedApps: SelectedApp[]): string | null {
       const service = perm.tccService;
 
       if (perm.tccService === 'AppleEvents') {
-        const receivers = state.receivers ?? [];
-        if (receivers.length === 0) continue; // skip — AppleEvents without a receiver is invalid
+        // Skip receivers with empty identifier — Apple Events without a target
+        // app is structurally invalid (and macOS / Graph would reject it).
+        const receivers = (state.receivers ?? []).filter((r) => r.identifier.trim() !== '');
+        if (receivers.length === 0) continue;
         if (!serviceGroups[service]) serviceGroups[service] = [];
         serviceGroups[service].push({
           kind: 'appleEvents',
@@ -177,13 +179,13 @@ export function generateMobileconfig(
             <key>PayloadDisplayName</key>
             <string>${escapeXml(profileName)}</string>
             <key>PayloadIdentifier</key>
-            <string>${inner}</string>
+            <string>${escapeXml(inner)}</string>
             <key>PayloadOrganization</key>
             <string>${escapeXml(organization)}</string>
             <key>PayloadType</key>
             <string>com.apple.TCC.configuration-profile-policy</string>
             <key>PayloadUUID</key>
-            <string>${inner}</string>
+            <string>${escapeXml(inner)}</string>
             <key>PayloadVersion</key>
             <integer>1</integer>
             <key>Services</key>
@@ -197,7 +199,7 @@ ${servicesContent}
     <key>PayloadDisplayName</key>
     <string>${escapeXml(profileName)}</string>
     <key>PayloadIdentifier</key>
-    <string>${profileUUID}</string>
+    <string>${escapeXml(profileUUID)}</string>
     <key>PayloadOrganization</key>
     <string>${escapeXml(organization)}</string>
     <key>PayloadScope</key>
@@ -205,7 +207,7 @@ ${servicesContent}
     <key>PayloadType</key>
     <string>Configuration</string>
     <key>PayloadUUID</key>
-    <string>${profileUUID}</string>
+    <string>${escapeXml(profileUUID)}</string>
     <key>PayloadVersion</key>
     <integer>1</integer>
 </dict>
