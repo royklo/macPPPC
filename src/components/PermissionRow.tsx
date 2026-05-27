@@ -84,9 +84,20 @@ export function PermissionRow({ perm, state, onChange }: Props) {
               />
             </button>
             <span className="font-medium">{perm.name}</span>
+            <span className="text-[10px] font-mono text-muted-foreground/70 px-1 py-0.5 rounded bg-muted/30">
+              {perm.tccService}
+            </span>
             {perm.minMacOS && (
               <span className="text-[9px] uppercase tracking-wide px-1.5 py-0.5 rounded-full bg-muted/60 text-muted-foreground font-medium">
                 macOS {perm.minMacOS}+
+              </span>
+            )}
+            {perm.deprecatedIn && (
+              <span
+                className="text-[9px] uppercase tracking-wide px-1.5 py-0.5 rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-400 font-medium"
+                title={`Deprecated by Apple in macOS ${perm.deprecatedIn}`}
+              >
+                Deprecated · macOS {perm.deprecatedIn}
               </span>
             )}
             {perm.tooltip && (

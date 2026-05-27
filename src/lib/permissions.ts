@@ -22,8 +22,9 @@ export const PPPC_PERMISSIONS: PppcPermission[] = [
     tccService: 'Accessibility',
     authMode: 'standard',
     category: 'common',
+    deprecatedIn: '26.2',
     tooltip:
-      'Deprecated in macOS 26.2 in favour of finer-grained services, but still required for older systems.',
+      'Apple deprecated this service in macOS 26.2 in favour of finer-grained services, but it is still required for older systems.',
   },
   {
     id: 'fullDiskAccess',
@@ -80,22 +81,24 @@ export const PPPC_PERMISSIONS: PppcPermission[] = [
   {
     id: 'inputMonitoring',
     name: 'Input Monitoring',
-    description: 'Listen to keyboard and other input events globally',
+    description:
+      'Listen to CoreGraphics events (CGEvents) and HID input events. Shown as "Input Monitoring" in System Settings.',
     tccService: 'ListenEvent',
     authMode: 'denyOrStandardUser',
     category: 'hardware',
     tooltip:
-      'For apps that hook keyboard/mouse globally (remote desktop, password managers, automation tools). Apple disallows force-Allow — deny or permit standard-user self-grant only.',
+      'TCC service: ListenEvent. The receive-side counterpart to PostEvent. Used by remote-control / password-manager / automation tools that hook keyboard or mouse globally. Apple disallows force-Allow — deny or permit standard-user self-grant only.',
   },
   {
     id: 'postEvent',
     name: 'Post Event',
-    description: 'Send synthetic keyboard and mouse events to the system',
+    description:
+      'Send CoreGraphics events (CGEvents) into the system event stream',
     tccService: 'PostEvent',
     authMode: 'standard',
     category: 'hardware',
     tooltip:
-      'For automation/accessibility tools that synthesize keystrokes or clicks (e.g. assistive software, RPA tools).',
+      'TCC service: PostEvent. The send-side counterpart to ListenEvent (Input Monitoring) — used by tools that synthesise CGEvents (assistive software, RPA / scripting tools).',
   },
   {
     id: 'bluetooth',

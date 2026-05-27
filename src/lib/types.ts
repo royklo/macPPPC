@@ -31,6 +31,8 @@ export interface PppcPermission {
   category: PermissionCategory;
   /** Minimum macOS version required for the service. Informational only. */
   minMacOS?: string;
+  /** macOS version in which Apple deprecated this service. Informational only. */
+  deprecatedIn?: string;
   tooltip?: string;
 }
 
