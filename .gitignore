@@ -5,6 +5,7 @@ dist-ssr
 .vite
 .DS_Store
 .env
+.env.example
 .env.local
 *.tsbuildinfo
 CLAUDE.md
