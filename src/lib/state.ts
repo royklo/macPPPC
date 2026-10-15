@@ -61,11 +61,12 @@ export function makeAppEntry(
   };
 }
 
-/** Sanitize a string into something safe for use as a filename.
- *  Falls back to 'profile' when the input contains only disallowed characters
- *  (e.g. non-Latin script), so generated filenames never collapse to '.mobileconfig'. */
+/** Sanitize a string into something safe for use as a filename, keeping it as close to
+ *  the policy name as possible: only characters Windows/macOS reject become '-', and
+ *  leading/trailing dots, spaces and dashes are trimmed. Falls back to 'profile' when nothing
+ *  is left, so generated filenames never collapse to '.mobileconfig'. */
 export function safeFilename(s: string): string {
-  const cleaned = s.replace(/[^A-Za-z0-9._-]+/g, '-').replace(/^-+|-+$/g, '');
+  const cleaned = s.replace(/[\\/:*?"<>|\x00-\x1f]+/g, '-').replace(/^[\s.-]+|[\s.-]+$/g, '');
   return cleaned || 'profile';
 }
 
